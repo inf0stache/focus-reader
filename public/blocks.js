@@ -40,7 +40,10 @@ export function toBlocks(body) {
 // paragraph instead of a real heading. Without this the article arrives as one
 // undifferentiated wall — which is precisely the thing that loses an ADHD reader.
 function isPseudoHeading(el, text) {
-  if (text.length > 80 || /[.!?,;:]$/.test(text)) return false;
+  // A trailing question mark is the one terminal punctuation that still reads as a
+  // heading — "What is a passkey?" is a section title, not a sentence of prose.
+  if (text.length > 80 || /[.!,;:]$/.test(text)) return false;
+  if (/\?$/.test(text) && text.length > 60) return false;
   if (!/^[A-Z0-9"'“]/.test(text) || text.split(/\s+/).length < 2) return false;
 
   const strong = [...el.querySelectorAll('strong, b, em')];
@@ -50,9 +53,16 @@ function isPseudoHeading(el, text) {
   }
   // A short, unpunctuated line standing on its own in front of real prose is a
   // section break the author never marked up. Requiring a long paragraph after it
-  // keeps ordinary short sentences out.
-  const next = el.nextElementSibling;
-  return !!next && next.tagName === 'P' && clean(next.textContent).length > 120;
+  // keeps ordinary short sentences out — but look past one or two further short
+  // lines first, since authors stack a heading and a sub-heading together.
+  let next = el.nextElementSibling;
+  for (let hops = 0; next && hops < 3; hops++, next = next.nextElementSibling) {
+    if (next.tagName !== 'P') break;
+    const t = clean(next.textContent);
+    if (t.length > 120) return true;
+    if (t.length > 80) break;   // a medium paragraph means this was prose after all
+  }
+  return false;
 }
 
 // Images that carry meaning are worth keeping; spacers, tracking pixels, icons and

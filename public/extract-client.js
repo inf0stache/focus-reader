@@ -11,11 +11,22 @@ const { toBlocks } = await import('./blocks.js' + new URL(import.meta.url).searc
 // Tried in order. The list is deliberately more than one: these are free services
 // that rate-limit, go down, or start demanding an API key without notice —
 // corsproxy.io began returning 401 while this was being built.
+// Tried in order. The list is deliberately more than one: these are free services
+// that rate-limit, go down, or start demanding an API key without notice —
+// corsproxy.io began returning 401 while this was being built, and allorigins and
+// codetabs have both answered 522 for sites they could not reach.
 const PROXIES = [
-  // Returns the rendered page as HTML, so Readability still does the extraction.
-  { url: (u) => 'https://r.jina.ai/' + u, headers: { 'x-return-format': 'html' } },
-  { url: (u) => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(u) },
-  { url: (u) => 'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(u) },
+  {
+    name: 'r.jina.ai',
+    url: (u) => 'https://r.jina.ai/' + u,
+    // html: so Readability still does the extraction rather than trusting the
+    // proxy's own idea of what the article is.
+    // no-cache: without it jina will happily serve a stale snapshot whose body is
+    // empty, which looks like a successful fetch and yields a blank article.
+    headers: { 'x-return-format': 'html', 'x-no-cache': 'true' },
+  },
+  { name: 'allorigins', url: (u) => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(u) },
+  { name: 'codetabs', url: (u) => 'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(u) },
 ];
 
 let ReadabilityCtor = null;
@@ -27,53 +38,66 @@ async function readability() {
   return ReadabilityCtor;
 }
 
-async function fetchHtml(target) {
-  let lastErr;
-  for (const proxy of PROXIES) {
-    try {
-      const res = await fetch(proxy.url(target), {
-        headers: proxy.headers || {},
-        signal: AbortSignal.timeout(25000),
-      });
-      if (!res.ok) throw new Error(`proxy returned ${res.status}`);
-      const html = await res.text();
-      // A proxy that answers 200 with a stub or an error page is worse than one
-      // that fails outright, because it silently yields an empty article.
-      if (html.trim().length > 500) return html;
-      throw new Error('proxy returned no usable page');
-    } catch (err) { lastErr = err; }
-  }
-  throw new Error(`no proxy could fetch it (${lastErr?.message || 'all failed'})`);
+async function fetchVia(proxy, target) {
+  const res = await fetch(proxy.url(target), {
+    headers: proxy.headers || {},
+    signal: AbortSignal.timeout(30000),
+  });
+  if (!res.ok) throw new Error(`${proxy.name} returned ${res.status}`);
+  const html = await res.text();
+  if (html.trim().length < 500) throw new Error(`${proxy.name} returned no usable page`);
+  return html;
+}
+
+function parseArticle(html, url) {
+  const dom = new DOMParser().parseFromString(html, 'text/html');
+  // Relative src/href in the fetched markup resolve against THIS page without a
+  // base, which would point every image back at the reader's own origin.
+  const base = dom.createElement('base');
+  base.href = url;
+  dom.head.prepend(base);
+
+  const article = new ReadabilityCtor(dom).parse();
+  if (!article || !article.textContent?.trim()) return null;
+  return article;
 }
 
 export async function extractInBrowser(target) {
   const url = new URL(target);
   if (!['http:', 'https:'].includes(url.protocol)) throw new Error('Only http(s) URLs are supported.');
 
-  const html = await fetchHtml(url.href);
-  const dom = new DOMParser().parseFromString(html, 'text/html');
+  await readability();
+  const failures = [];
 
-  // Relative src/href in the fetched markup resolve against THIS page without a
-  // base, which would point every image back at the reader's own origin.
-  const base = dom.createElement('base');
-  base.href = url.href;
-  dom.head.prepend(base);
+  // A proxy answering 200 with the page shell and no article body is the failure
+  // that actually bites: it looks like success. So each proxy's result is run all
+  // the way through Readability, and only a real article ends the loop.
+  for (const proxy of PROXIES) {
+    let html;
+    try {
+      html = await fetchVia(proxy, url.href);
+    } catch (err) {
+      failures.push(err.message);
+      continue;
+    }
+    const article = parseArticle(html, url.href);
+    if (!article) {
+      failures.push(`${proxy.name} returned a page with no article text`);
+      continue;
+    }
 
-  const Readability = await readability();
-  const article = new Readability(dom).parse();
-  if (!article || !article.textContent?.trim()) {
-    throw new Error('Could not find readable article text on that page.');
+    const holder = new DOMParser().parseFromString(
+      `<html><head><base href="${url.href}"></head><body>${article.content}</body></html>`, 'text/html');
+
+    return {
+      title: article.title || url.hostname,
+      byline: article.byline || '',
+      siteName: article.siteName || url.hostname,
+      url: url.href,
+      blocks: toBlocks(holder.body),
+      words: article.textContent.trim().split(/\s+/).length,
+    };
   }
 
-  const holder = new DOMParser().parseFromString(
-    `<html><head><base href="${url.href}"></head><body>${article.content}</body></html>`, 'text/html');
-
-  return {
-    title: article.title || url.hostname,
-    byline: article.byline || '',
-    siteName: article.siteName || url.hostname,
-    url: url.href,
-    blocks: toBlocks(holder.body),
-    words: article.textContent.trim().split(/\s+/).length,
-  };
+  throw new Error(`no proxy could read it (${failures.join('; ')})`);
 }
