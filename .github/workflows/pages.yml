@@ -23,6 +23,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/configure-pages@v5
+      # Pages serves assets with max-age=600 and we cannot set headers, so stamp
+      # the commit into the entry script. Each deploy then busts the whole import
+      # chain instead of half-updating a returning visitor's app.
+      - name: Stamp build version
+        run: sed -i "s/app\.js?v=dev/app.js?v=${GITHUB_SHA::7}/" public/index.html
       # public/ is the whole static app: the Node server is for local use only.
       - uses: actions/upload-pages-artifact@v3
         with:

@@ -477,7 +477,10 @@ async function extractAnyhow(url) {
       else throw err;
     }
   }
-  const { extractInBrowser } = await import('./extract-client.js');
+  // Carry the entry script's version through to lazily-imported modules. Pages
+  // serves everything with max-age=600, so without this a deploy leaves returning
+  // visitors running a stale extractor against a fresh page for ten minutes.
+  const { extractInBrowser } = await import('./extract-client.js' + new URL(import.meta.url).search);
   $('proxyNote').hidden = false;
   return extractInBrowser(url);
 }

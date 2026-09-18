@@ -6,7 +6,7 @@
 // has to relay the request through a public proxy. That means the address of every
 // article you open this way is visible to a third party. Run `node server.js`
 // locally instead and nothing leaves your machine.
-import { toBlocks } from './blocks.js';
+const { toBlocks } = await import('./blocks.js' + new URL(import.meta.url).search);
 
 // Tried in order. The list is deliberately more than one: these are free services
 // that rate-limit, go down, or start demanding an API key without notice —
