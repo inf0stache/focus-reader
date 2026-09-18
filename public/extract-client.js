@@ -8,9 +8,14 @@
 // locally instead and nothing leaves your machine.
 import { toBlocks } from './blocks.js';
 
+// Tried in order. The list is deliberately more than one: these are free services
+// that rate-limit, go down, or start demanding an API key without notice —
+// corsproxy.io began returning 401 while this was being built.
 const PROXIES = [
-  (u) => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(u),
-  (u) => 'https://corsproxy.io/?url=' + encodeURIComponent(u),
+  // Returns the rendered page as HTML, so Readability still does the extraction.
+  { url: (u) => 'https://r.jina.ai/' + u, headers: { 'x-return-format': 'html' } },
+  { url: (u) => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(u) },
+  { url: (u) => 'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(u) },
 ];
 
 let ReadabilityCtor = null;
@@ -26,14 +31,19 @@ async function fetchHtml(target) {
   let lastErr;
   for (const proxy of PROXIES) {
     try {
-      const res = await fetch(proxy(target), { signal: AbortSignal.timeout(25000) });
+      const res = await fetch(proxy.url(target), {
+        headers: proxy.headers || {},
+        signal: AbortSignal.timeout(25000),
+      });
       if (!res.ok) throw new Error(`proxy returned ${res.status}`);
       const html = await res.text();
-      if (html.trim()) return html;
-      throw new Error('empty response');
+      // A proxy that answers 200 with a stub or an error page is worse than one
+      // that fails outright, because it silently yields an empty article.
+      if (html.trim().length > 500) return html;
+      throw new Error('proxy returned no usable page');
     } catch (err) { lastErr = err; }
   }
-  throw new Error(`Could not fetch that page (${lastErr?.message || 'no proxy responded'}).`);
+  throw new Error(`no proxy could fetch it (${lastErr?.message || 'all failed'})`);
 }
 
 export async function extractInBrowser(target) {
