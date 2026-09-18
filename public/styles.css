@@ -1,0 +1,238 @@
+/* Themes. Pure white on pure black is the most common complaint from readers
+   with visual-stress / attention issues, so no theme uses either extreme. */
+:root {
+  --bg: #f6f1e7; --surface: #fffaf1; --ink: #2f2a24; --muted: #7b7168;
+  --accent: #b2542b; --line: #e2d7c6; --dim: 0.28; --highlight: #f6e3b0;
+  --font: 'Atkinson Hyperlegible', system-ui, sans-serif;
+  --size: 20px; --leading: 1.7; --measure: 66ch; --tracking: 0.02em;
+  --wording: 0.06em; --para-gap: 1.4em; --img-scale: 1; --bio-rest: 0.75;
+}
+[data-theme="cream"] { --bg:#fbf7ef; --surface:#fff; --ink:#3a342c; --muted:#8a8074; --accent:#8a5a2b; --line:#ece3d4; --highlight:#fdefc0; }
+[data-theme="mist"]  { --bg:#e9eef1; --surface:#f7fafb; --ink:#26313a; --muted:#6b7b87; --accent:#2f6f8f; --line:#d3dee4; --highlight:#cfe7f3; }
+[data-theme="sage"]  { --bg:#e9efe7; --surface:#f6faf4; --ink:#26302a; --muted:#6d7d72; --accent:#3d7a55; --line:#d4e0d3; --highlight:#d6ecd2; }
+[data-theme="dusk"]  { --bg:#22242b; --surface:#2a2d36; --ink:#dfe2ea; --muted:#9aa0ae; --accent:#e0a458; --line:#3a3e4a; --dim:0.32; --highlight:#4a4326; }
+[data-theme="ink"]   { --bg:#14161a; --surface:#1b1e24; --ink:#c9ced8; --muted:#818a99; --accent:#79b0d8; --line:#2a2f38; --dim:0.3; --highlight:#2c3b4a; }
+[data-theme="contrast"] { --bg:#000; --surface:#0a0a0a; --ink:#ffe94d; --muted:#c0b23a; --accent:#ffe94d; --line:#333; --dim:0.35; --highlight:#3a3300; }
+
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--ink); }
+body { font-family: var(--font); -webkit-font-smoothing: antialiased; }
+
+/* ---------- top bar ---------- */
+.bar {
+  position: sticky; top: 0; z-index: 30; display: flex; gap: 12px; align-items: center;
+  padding: 10px 16px; background: color-mix(in srgb, var(--surface) 92%, transparent);
+  backdrop-filter: blur(8px); border-bottom: 1px solid var(--line);
+}
+.load { display: flex; gap: 8px; flex: 1; min-width: 0; }
+.load input {
+  flex: 1; min-width: 0; font: inherit; font-size: 15px; padding: 9px 12px;
+  border: 1px solid var(--line); border-radius: 10px; background: var(--bg); color: var(--ink);
+}
+.load input:focus-visible, button:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+button {
+  font: inherit; font-size: 15px; padding: 9px 14px; border-radius: 10px; cursor: pointer;
+  border: 1px solid transparent; background: var(--accent); color: var(--surface);
+}
+button.ghost { background: transparent; color: var(--ink); border-color: var(--line); }
+button.wide { width: 100%; }
+button[disabled] { opacity: .5; cursor: progress; }
+.bar-right { display: flex; gap: 8px; }
+.progress { position: absolute; left: 0; bottom: -1px; height: 3px; width: 100%; }
+.progress span { display: block; height: 100%; width: 0; background: var(--accent); transition: width .12s linear; }
+
+/* ---------- settings panel ---------- */
+.panel {
+  position: fixed; top: 58px; right: 0; bottom: 0; width: min(340px, 92vw); z-index: 40;
+  overflow-y: auto; padding: 4px 18px 60px; background: var(--surface);
+  border-left: 1px solid var(--line); font-size: 14px;
+}
+.panel[hidden] { display: none; }
+.panel section { padding: 16px 0; border-bottom: 1px solid var(--line); }
+.panel h3 { margin: 0 0 12px; font-size: 13px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+.panel h3 em { text-transform: none; letter-spacing: 0; font-weight: 400; }
+.panel label { display: block; margin-bottom: 14px; color: var(--muted); }
+.panel label.check { color: var(--ink); display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.panel label.check small { flex-basis: 100%; padding-left: 24px; color: var(--muted); }
+.panel input[type=range] { width: 100%; margin-top: 6px; accent-color: var(--accent); }
+.panel select { width: 100%; margin-top: 6px; font: inherit; padding: 7px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); }
+.panel output { float: right; color: var(--ink); font-variant-numeric: tabular-nums; }
+.panel .row { display: flex; gap: 8px; margin-bottom: 12px; }
+.note { color: var(--muted); font-size: 12.5px; line-height: 1.5; }
+.themes { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.swatch { height: 46px; border-radius: 10px; border: 2px solid var(--line); cursor: pointer; display: grid; place-items: end center; font-size: 10px; padding-bottom: 3px; }
+.swatch[aria-pressed="true"] { border-color: var(--accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 35%, transparent); }
+
+/* ---------- reading surface ---------- */
+main { padding: 6vh 20px 40vh; }
+article, .empty { max-width: var(--measure); margin: 0 auto; }
+.empty h1 { font-size: 2rem; }
+.empty { color: var(--muted); line-height: 1.7; font-size: 16px; }
+.empty b { color: var(--ink); }
+.empty li { margin-bottom: 10px; }
+.meta { margin-bottom: 2.5em; padding-bottom: 1.2em; border-bottom: 1px solid var(--line); }
+.meta h1 { font-size: 1.6em; line-height: 1.25; margin: 0 0 .3em; }
+.meta .sub { color: var(--muted); font-size: 14px; }
+
+#content {
+  font-size: var(--size); line-height: var(--leading);
+  letter-spacing: var(--tracking); word-spacing: var(--wording);
+  text-align: left; hyphens: none;
+}
+body.justify #content { text-align: justify; hyphens: auto; }
+#content .blk { margin: 0 0 var(--para-gap); transition: opacity .18s ease; }
+#content h2.blk, #content h3.blk, #content h4.blk {
+  margin-top: 1.9em; line-height: 1.25; color: var(--accent);
+  letter-spacing: normal; text-wrap: balance;
+}
+#content h2.blk { font-size: 1.32em; }
+#content h3.blk { font-size: 1.14em; }
+#content h4.blk { font-size: 1em; text-transform: uppercase; letter-spacing: .08em; font-size: .82em; }
+/* a rule above the big sections — cheap, strong "you are somewhere new" signal */
+#content h2.blk { padding-top: .8em; border-top: 1px solid var(--line); }
+#content .quote { border-left: 3px solid var(--accent); padding-left: 1em; color: var(--muted); }
+#content .code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .85em; background: var(--surface); padding: 1em; border-radius: 8px; overflow-x: auto; white-space: pre-wrap; }
+#content .list { margin-left: 1.4em; list-style: disc; display: list-item; }
+/* Bionic: bold alone is too weak to fixate on at reading sizes, so the tail of each
+   word recedes as well. The gap between the two is the whole effect. */
+#content b.bio { font-weight: 700; color: var(--ink); }
+#content .bio-rest { font-weight: 400; opacity: var(--bio-rest); }
+
+/* Images. At 100% an image sits at its natural size, capped to the text column —
+   no upscaling of a small thumbnail unless you ask for it. Above 100% the figure
+   is allowed to break out past the measure, centred, so the column the eye tracks
+   while reading still ends where it always did. */
+#content figure.image {
+  width: max(100%, calc(100% * var(--img-scale)));
+  max-width: 92vw;
+  margin: 2em 0 2em 50%;
+  transform: translateX(-50%);
+  cursor: zoom-in;
+}
+#content figure.image img {
+  display: block; margin: 0 auto;
+  width: min(100%, calc(var(--nat-w, 100%) * var(--img-scale)));
+  height: auto; max-height: calc(70vh * max(1, var(--img-scale)));
+  border-radius: 8px; background: var(--surface); border: 1px solid var(--line);
+}
+#content figure.image.zoom { width: 92vw; cursor: zoom-out; }
+#content figure.image.zoom img { width: 100%; max-height: 88vh; object-fit: contain; }
+#content figure.image figcaption {
+  max-width: min(100%, 62ch); margin: .6em auto 0;
+  font-size: .8em; line-height: 1.5; color: var(--muted);
+  letter-spacing: normal; word-spacing: normal;
+}
+body.no-images #content figure.image { display: none; }
+body.first-line .para .lead { background: linear-gradient(transparent 62%, var(--highlight) 62%); }
+
+/* focus mode: everything but the active paragraph recedes */
+body.focus #content .blk { opacity: var(--dim); }
+body.focus #content .blk.active { opacity: 1; }
+body.focus #content .blk.active::before {
+  content: ''; position: absolute; left: -22px; top: .35em; bottom: .35em; width: 3px;
+  background: var(--accent); border-radius: 2px;
+}
+body.focus #content .blk { position: relative; }
+
+.chunk { margin: 2.6em 0; display: flex; align-items: center; gap: 12px; color: var(--muted); font-size: 13px; letter-spacing: .06em; text-transform: uppercase; }
+.chunk::before, .chunk::after { content: ''; height: 1px; background: var(--line); flex: 1; }
+body:not(.chunks) .chunk { display: none; }
+.done { margin-top: 3em; text-align: center; color: var(--muted); font-size: 14px; }
+
+.ruler-band { position: fixed; left: 0; right: 0; height: 2.6em; z-index: 5; pointer-events: none;
+  border-top: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  background: color-mix(in srgb, var(--accent) 8%, transparent); }
+
+.toast { position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%); z-index: 60;
+  background: var(--surface); border: 1px solid var(--line); color: var(--ink);
+  padding: 10px 16px; border-radius: 10px; font-size: 14px; max-width: 90vw; }
+
+dialog { border: 1px solid var(--line); border-radius: 14px; background: var(--surface); color: var(--ink); padding: 20px; width: min(640px, 92vw); }
+dialog::backdrop { background: rgba(0,0,0,.45); }
+dialog textarea { width: 100%; font: inherit; font-size: 15px; padding: 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); }
+dialog menu { display: flex; justify-content: flex-end; gap: 8px; padding: 0; margin: 14px 0 0; }
+
+@media (max-width: 620px) {
+  .bar { flex-wrap: wrap; }
+  main { padding-top: 4vh; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+/* ---------- retrieval prompts, resume, capture ---------- */
+/* The break used to be a horizontal rule that asked nothing. Interpolated recall is
+   the highest-evidence attention lever in the app, so it gets real estate. */
+.chunk-card { margin: 3em 0; }
+.chunk-card .ask {
+  margin-top: 1em; padding: 1em 1.1em; border: 1px solid var(--line);
+  border-left: 3px solid var(--accent); border-radius: 10px; background: var(--surface);
+}
+.chunk-card .ask label { display: block; font-size: 15px; color: var(--ink); margin-bottom: .6em; }
+.chunk-card .ask textarea {
+  width: 100%; font: inherit; font-size: 15px; line-height: 1.5; padding: 9px 11px;
+  border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--ink);
+  letter-spacing: normal; word-spacing: normal; resize: vertical;
+}
+.chunk-card .ask button.small { font-size: 13px; padding: 5px 10px; margin-top: .6em; }
+.chunk-card.answered .ask { border-left-color: var(--muted); opacity: .75; }
+.chunk-card.collapsed .ask { display: none; }
+body:not(.chunks) .chunk-card .chunk { display: none; }
+body.no-prompts .chunk-card .ask { display: none; }
+
+.resume {
+  position: sticky; top: 58px; z-index: 25; display: flex; gap: 10px; align-items: center;
+  padding: 10px 16px; font-size: 14px; background: var(--surface);
+  border-bottom: 1px solid var(--line);
+}
+.resume[hidden] { display: none; }
+.resume span { flex: 1; color: var(--ink); }
+.resume button { font-size: 14px; padding: 6px 12px; }
+
+/* a highlight you made, and the note attached to it */
+#content .blk.marked { background: color-mix(in srgb, var(--highlight) 70%, transparent); border-radius: 4px; }
+#content .blk.marked::after { content: ''; }
+.note-block { margin: -0.4em 0 var(--para-gap); }
+.note-block textarea {
+  width: 100%; font: inherit; font-size: .8em; line-height: 1.5; padding: 8px 10px;
+  border: 1px dashed var(--line); border-left: 3px solid var(--accent); border-radius: 8px;
+  background: var(--surface); color: var(--ink);
+  letter-spacing: normal; word-spacing: normal; resize: vertical;
+}
+
+.keep { margin-top: 3.5em; padding-top: 1.4em; border-top: 1px solid var(--line); }
+.keep[hidden] { display: none; }
+.keep h3 { font-size: 13px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 0 0 1em; }
+.keep p { font-size: 15px; line-height: 1.6; margin: 0 0 .9em; padding-left: .9em; border-left: 2px solid var(--line); }
+.keep .keep-answer { border-left-color: var(--accent); color: var(--ink); }
+.keep .keep-mark { background: color-mix(in srgb, var(--highlight) 45%, transparent); border-radius: 0 4px 4px 0; padding: .4em .6em .4em .9em; }
+.keep .keep-note, .keep .keep-note-only { color: var(--muted); font-style: italic; }
+
+/* the sentence being spoken, so hearing and reading stay in lockstep */
+#content .sent.speaking {
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  border-radius: 3px; box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+body.speaking #content .blk { opacity: 1; }   /* focus dimming would fight the sync */
+
+/* a block you've genuinely read gets a quiet tick in the margin.
+   NB: not `.done` — that class is the end-of-article footer. */
+#content .blk.read::after {
+  content: '·'; position: absolute; left: -22px; top: .1em;
+  color: var(--muted); font-size: 1.4em; line-height: 1;
+}
+#content .blk { position: relative; }
+
+.presets { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
+.presets .preset { font-size: 13px; padding: 9px 4px; }
+.panel details { margin-bottom: 4px; }
+.panel details summary { cursor: pointer; font-size: 13px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-bottom: 12px; }
+.panel details summary em { text-transform: none; letter-spacing: 0; font-style: normal; }
+.empty kbd { font: inherit; font-size: .85em; padding: 1px 5px; border: 1px solid var(--line); border-radius: 4px; background: var(--surface); }
+
+.proxy-note {
+  max-width: var(--measure); margin: 0 auto; padding: 10px 14px;
+  font-size: 12.5px; line-height: 1.5; color: var(--muted);
+  border: 1px dashed var(--line); border-radius: 8px;
+}
+.proxy-note[hidden] { display: none; }
+.proxy-note code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }

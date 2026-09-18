@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en" data-theme="paper">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Focus Reader</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Lexend:wght@400;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+
+<header class="bar">
+  <form id="loadForm" class="load">
+    <input id="urlInput" type="url" placeholder="Paste an article link…" spellcheck="false" autocomplete="off">
+    <button type="submit" id="loadBtn">Read</button>
+  </form>
+  <div class="bar-right">
+    <button id="speak" class="ghost" title="Read aloud from here (a)">▶ Listen</button>
+    <button id="stopSpeak" class="ghost" title="Stop (a)">■</button>
+    <button id="pasteTextBtn" class="ghost" title="Paste raw text instead">Text</button>
+    <button id="panelBtn" class="ghost" aria-expanded="false">Settings</button>
+  </div>
+  <div id="progress" class="progress"><span></span></div>
+</header>
+
+<aside id="panel" class="panel" hidden>
+  <section>
+    <h3>Reading size</h3>
+    <div class="presets">
+      <button class="preset ghost" data-preset="comfort">Comfort</button>
+      <button class="preset ghost" data-preset="large">Large print</button>
+      <button class="preset ghost" data-preset="dense">Dense</button>
+    </div>
+    <p class="note">Start here. The sliders below move the same things by hand — worth a
+    look once, not worth twenty minutes before every article.</p>
+  </section>
+
+  <section>
+    <h3>Attention supports</h3>
+    <label class="check"><input type="checkbox" id="prompts"> Recall prompts <small>each break asks what you just read — the strongest thing here</small></label>
+    <label class="check"><input type="checkbox" id="focusMode"> Focus mode <small>dims everything but the current paragraph</small></label>
+    <label class="check"><input type="checkbox" id="chunks"> Chunk markers <small>breaks the article into ~2-min stretches</small></label>
+    <label class="check"><input type="checkbox" id="firstLine"> Highlight first sentence <small>skim anchor per paragraph</small></label>
+    <label class="check"><input type="checkbox" id="images"> Show images <small>off strips every picture — fewer competing stimuli</small></label>
+    <label>Image size <output id="imgScaleOut"></output>
+      <input id="imgScale" type="range" min="0.6" max="2.5" step="0.05">
+    </label>
+  </section>
+
+  <section>
+    <h3>Read aloud</h3>
+    <label>Rate <output id="rateOut"></output>
+      <input id="rate" type="range" min="0.6" max="2" step="0.05">
+    </label>
+    <p class="note">Seeing and hearing the same sentence at once is the best-supported
+    support in this app. The spoken line is highlighted as it goes.</p>
+  </section>
+
+  <section>
+    <h3>Theme</h3>
+    <div id="themes" class="themes"></div>
+  </section>
+
+  <section>
+    <details>
+      <summary>Fine-tune typography</summary>
+      <label>Font
+        <select id="font">
+          <option value="atkinson">Atkinson Hyperlegible</option>
+          <option value="lexend">Lexend</option>
+          <option value="system">System sans</option>
+          <option value="serif">Source Serif</option>
+        </select>
+      </label>
+      <label>Size <output id="sizeOut"></output>
+        <input id="size" type="range" min="15" max="30" step="1">
+      </label>
+      <label>Line height <output id="leadingOut"></output>
+        <input id="leading" type="range" min="1.3" max="2.2" step="0.05">
+      </label>
+      <label>Line length <output id="measureOut"></output>
+        <input id="measure" type="range" min="40" max="90" step="1">
+      </label>
+      <label>Letter spacing <output id="trackingOut"></output>
+        <input id="tracking" type="range" min="0" max="0.12" step="0.01">
+      </label>
+      <label>Word spacing <output id="wordingOut"></output>
+        <input id="wording" type="range" min="0" max="0.5" step="0.05">
+      </label>
+      <label>Paragraph gap <output id="paraGapOut"></output>
+        <input id="paraGap" type="range" min="0.6" max="3" step="0.1">
+      </label>
+    </details>
+  </section>
+
+  <section>
+    <details>
+      <summary>Experimental <em>— weak or no evidence</em></summary>
+      <p class="note">These are here because people ask for them. The controlled studies
+      do not support them; if one subjectively helps you, use it.</p>
+      <label class="check"><input type="checkbox" id="bionic"> Bionic bolding</label>
+      <label>Bionic strength <output id="bionicStrengthOut"></output>
+        <input id="bionicStrength" type="range" min="0" max="1" step="0.05">
+      </label>
+      <label class="check"><input type="checkbox" id="ruler"> Reading ruler</label>
+      <label class="check"><input type="checkbox" id="hyphens"> Justify + hyphenate</label>
+    </details>
+  </section>
+
+  <section>
+    <button id="reset" class="ghost wide">Reset to defaults</button>
+  </section>
+</aside>
+
+<div id="resume" class="resume" hidden>
+  <span id="resumeText"></span>
+  <button id="resumeGo">Resume</button>
+  <button id="resumeDismiss" class="ghost">Start over</button>
+</div>
+
+<main id="stage">
+  <div id="empty" class="empty">
+    <h1>Focus Reader</h1>
+    <p>Paste a link above. The page gets stripped to its text and re-typeset for an attention system that wanders.</p>
+    <ul>
+      <li><b>Spacing beats font choice.</b> Line height, line length and letter spacing move comprehension more than any “special” typeface.</li>
+      <li><b>Short lines</b> (60–70 characters) cut return-sweep errors — the place attention most often drops.</li>
+      <li><b>Focus mode + chunking</b> turn an endless page into finishable pieces, which is a task-initiation problem as much as a reading one.</li>
+      <li><b>Every break asks you a question.</b> Stopping to say what you just read is the best-evidenced way to cut mind-wandering and keep any of it.</li>
+      <li><b>The progress bar counts reading, not scrolling</b> — a block only counts once you've actually sat on it.</li>
+      <li><b>It remembers where you stopped</b>, along with anything you highlighted (<kbd>h</kbd>) or noted (<kbd>n</kbd>).</li>
+    </ul>
+  </div>
+  <article id="article" hidden>
+    <div id="meta" class="meta"></div>
+    <div id="content"></div>
+    <div class="done">End of article ✓</div>
+    <section id="keep" class="keep" hidden></section>
+  </article>
+</main>
+
+<div id="rulerBand" class="ruler-band" hidden></div>
+<div id="toast" class="toast" hidden></div>
+<p id="proxyNote" class="proxy-note" hidden>
+  No local extractor behind this page, so article URLs are being fetched through a
+  public CORS proxy — that proxy can see which articles you open. Run it locally
+  (<code>node server.js</code>) to keep that private.
+</p>
+
+<dialog id="textDialog">
+  <form method="dialog">
+    <h3>Paste text</h3>
+    <textarea id="rawText" rows="12" placeholder="Paste anything — an email, a PDF dump, a chapter…"></textarea>
+    <menu><button value="cancel" class="ghost">Cancel</button><button id="rawGo" value="ok">Read it</button></menu>
+  </form>
+</dialog>
+
+<script src="/app.js" type="module"></script>
+</body>
+</html>
